@@ -33,6 +33,7 @@
     "nodemon": "^1.8.1"
   },
   "dependencies": {
+    "lodash.merge": "^3.3.2",
     "simple-backoff": "^1.0.0"
   }
 }

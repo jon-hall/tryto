@@ -63,10 +63,11 @@ describe('tryto', function() {
                     jasmine.clock().uninstall();
                 });
 
+                // TODO: This test explodes @ >1,000,000 iterations with out of memory error - refactor 'in' to fix!
                 describe('and we don\'t supply a "for" value', function() {
                     it('it runs the task indefinitely', function(done) {
                         var i = 0,
-                            limit = 10000;
+                            limit = process.env.STRESS_TEST ? 1000000 : 100000;
 
                         tryto(function() {
                             if(i < limit) throw 'fail';
@@ -108,7 +109,7 @@ describe('tryto', function() {
                         }
                     });
 
-                    describe('and we\'re using the linear backoff strategy', function() {
+                    describe('and we\'re using the (default) nobackoff strategy', function() {
                         it('it repeats at regular intervals', function(done) {
                             var i = 0,
                                 limit = 99,
@@ -141,16 +142,16 @@ describe('tryto', function() {
                         });
                     });
 
-                    describe('and we\'re using the exponential backoff strategy', function() {
-                        it('it repeats at increasing intervals', function(done) {
+                    describe('and we\'re using the linear backoff strategy', function() {
+                        it('it repeats at linearly increasing intervals', function(done) {
                             var i = 0,
                                 limit = 99,
                                 n = 1,
                                 d;
 
                             tryto(function() { i++; throw 'fail'; })
-                                .using(tryto.exponential)
-                                .config({ factor: 2, max: 999999 })
+                                .using(tryto.linear)
+                                .config({ step: 1, max: 999999 })
                                 .every(1)
                                 .for(100)
                                 .now()
@@ -165,10 +166,10 @@ describe('tryto', function() {
                             while(limit--) {
                                 d = i;
                                 jasmine.clock().tick(n);
-                                n *= 2
+                                n += 1;
                                 d = i - d;
 
-                                // First tick triggers now AND retry #1
+                                // First tick triggers now AND retry #1 => d === 2
                                 if(limit === 98) {
                                     expect(d).toBe(2);
                                 } else {

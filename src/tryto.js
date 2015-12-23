@@ -2,11 +2,37 @@
 const simple_backoff = require('simple-backoff'),
     _ = require('lodash.merge');
 
+
+exports = module.exports = function tryto(fn) {
+    return new Tryto(fn);
+};
+
+function nextify(Ctor) {
+    return function(cfg) {
+        let nexter = new Ctor(cfg);
+        return function next() {
+            return nexter.next();
+        };
+    };
+}
+
+function NoBackoff(cfg) {
+    simple_backoff.Backoff.call(this, cfg);
+}
+NoBackoff.prototype = Object.create(simple_backoff.Backoff.prototype);
+NoBackoff.prototype._step = NoBackoff.prototype._reset = function(){ this.cur = this.min; };
+
+exports.nobackoff = nextify(NoBackoff);
+exports.linear = nextify(simple_backoff.LinearBackoff);
+exports.exponential = nextify(simple_backoff.ExponentialBackoff);
+exports.fibonacci = nextify(simple_backoff.FibonacciBackoff);
+
+
 class Tryto {
     constructor(fn) {
         this._fn = fn;
         this._for = Infinity;
-        this._using = simple_backoff.LinearBackoff;
+        this._using = exports.nobackoff;
     }
 
     for(times) {
@@ -57,7 +83,7 @@ class Tryto {
                     if(result instanceof Promise) {
                         result.then(null, () => {
                             if(--this._for) {
-                                return this.in(this._getDelay(strat), strat);
+                                return this.in(strat(), strat);
                             } else {
                                 throw 'expired';
                             }
@@ -67,7 +93,7 @@ class Tryto {
                     }
                 } catch(ex) {
                     if(--this._for) {
-                        this.in(this._getDelay(strat), strat).then(res, rej);
+                        this.in(strat(), strat).then(res, rej);
                     } else {
                         rej('expired');
                     }
@@ -78,9 +104,10 @@ class Tryto {
 
     _getStrat() {
         if([
-            simple_backoff.LinearBackoff,
-            simple_backoff.ExponentialBackoff,
-            simple_backoff.FibonacciBackoff
+            exports.nobackoff,
+            exports.linear,
+            exports.exponential,
+            exports.fibonacci
         ].indexOf(this._using) >= 0) {
             let cfg = _({},
                 this._config, {
@@ -88,19 +115,7 @@ class Tryto {
                     step: this._every || 0,
                     factor: 2
                 });
-            return new this._using(this._config);
+            return this._using(cfg);
         }
     }
-
-    _getDelay(strat) {
-        return strat.next();
-    }
 }
-
-exports = module.exports = function tryto(fn) {
-    return new Tryto(fn);
-};
-
-exports.linear = simple_backoff.LinearBackoff;
-exports.exponential = simple_backoff.ExponentialBackoff;
-exports.fibonacci = simple_backoff.FibonacciBackoff;

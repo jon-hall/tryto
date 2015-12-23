@@ -83,7 +83,7 @@ class Tryto {
                     if(result instanceof Promise) {
                         result.then(res, () => {
                             if(--_this._for) {
-                                setTimeout(try_again, strat());
+                                setTimeout(try_again, _this._get_delay(strat));
                             } else {
                                 throw 'expired';
                             }
@@ -93,7 +93,11 @@ class Tryto {
                     }
                 } catch(ex) {
                     if(--_this._for) {
-                        setTimeout(try_again, strat());
+                        try {
+                            setTimeout(try_again, _this._get_delay(strat));
+                        } catch(ex2) {
+                            rej(ex2);
+                        }
                     } else {
                         rej('expired');
                     }
@@ -103,12 +107,7 @@ class Tryto {
     }
 
     _get_strat() {
-        if([
-            exports.nobackoff,
-            exports.linear,
-            exports.exponential,
-            exports.fibonacci
-        ].indexOf(this._using) >= 0) {
+        if(this._using.length === 1) {
             let cfg = _({},
                 this._config, {
                     min: this._every || 0,
@@ -116,6 +115,28 @@ class Tryto {
                     factor: 2
                 });
             return this._using(cfg);
+        } else {
+            return this._using;
         }
+    }
+
+    _get_delay(strat) {
+        if(strat._safe) {
+            return strat();
+        }
+
+        let n;
+        try {
+            n = strat();
+            if((typeof n !== 'number') || isNaN(n)) {
+                throw 'NaN';
+            }
+
+            strat._safe = true;
+        } catch(ex) {
+            throw 'Strategy must be a "nextable"';
+        }
+
+        return n;
     }
 }

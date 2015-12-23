@@ -38,7 +38,7 @@ describe('tryto', function() {
 
                 describe('and we do supply a "for" value', function() {
                     it('it runs the task for the specified number of ticks', function(done) {
-                        var i = 0;
+                        let i = 0;
                         tryto(function() { if(++i < 100) throw 'fail'; })
                             .for(100)
                             .now()
@@ -64,7 +64,7 @@ describe('tryto', function() {
 
                 describe('and we don\'t supply a "for" value', function() {
                     it('it runs the task indefinitely', function(done) {
-                        var i = 0,
+                        let i = 0,
                             // To test extreme iterations (100,000,000), set STRESS_TEST
                             // WARNING: It'll probably take several minutes to run!
                             limit = process.env.STRESS_TEST ? 100000000 : 100000;
@@ -88,7 +88,7 @@ describe('tryto', function() {
 
                 describe('and we do supply a "for" value', function() {
                     it('it runs the task that many times', function(done) {
-                        var i = 0,
+                        let i = 0,
                             limit = 100;
 
                         tryto(function() { i++; throw 'fail'; })
@@ -110,7 +110,7 @@ describe('tryto', function() {
 
                     describe('and we\'re using the (default) nobackoff strategy', function() {
                         it('it repeats at regular intervals', function(done) {
-                            var i = 0,
+                            let i = 0,
                                 limit = 99,
                                 d;
 
@@ -143,7 +143,7 @@ describe('tryto', function() {
 
                     describe('and we\'re using the linear backoff strategy', function() {
                         it('it repeats at linearly increasing intervals', function(done) {
-                            var i = 0,
+                            let i = 0,
                                 limit = 99,
                                 n = 1,
                                 d;
@@ -181,7 +181,7 @@ describe('tryto', function() {
 
                     describe('and we\'re using the exponential backoff strategy', function() {
                         it('it repeats at exponentially increasing intervals', function(done) {
-                            var i = 0,
+                            let i = 0,
                                 // Need a much lower limit when exponential!
                                 limit = 19,
                                 n = 1,
@@ -220,7 +220,7 @@ describe('tryto', function() {
 
                     describe('and we\'re using the fibonacci backoff strategy', function() {
                         it('it repeats at intervals in a fibonacci sequence', function(done) {
-                            var i = 0,
+                            let i = 0,
                                 // Need a bit of a lower limit when fibonacci
                                 limit = 49,
                                 n = 1,
@@ -261,6 +261,93 @@ describe('tryto', function() {
                                     expect(d).toBe(1);
                                 }
                             }
+                        });
+                    });
+
+                    describe('and we\'re using a custom backoff strategy', function() {
+                        describe('and the strategy isn\'t a "nextable" and doesn\'t return one', function() {
+                            it('it rejects', function(done) {
+                                let limit = 1;
+
+                                tryto(function(){ throw 'fail'; })
+                                    .using(function(){})
+                                    .for(2)
+                                    .now()
+                                    .then(_ => {
+                                        expect('this not').toBe('hit');
+                                        done();
+                                    }, err => {
+                                        expect(err).toMatch(/nextable/i);
+                                        done();
+                                    });
+
+                                jasmine.clock().tick(1);
+                            });
+                        });
+
+                        describe('and the strategy is a "nextable"', function() {
+                            it('it repeats at intervals returned by the strategy', function(done) {
+                                let i = 0,
+                                    limit = 50,
+                                    n = 1,
+                                    d;
+
+                                tryto(function() { i++; throw 'fail'; })
+                                    .using(function() { n = Math.floor(Math.random() * 1000); return n; })
+                                    .every(1)
+                                    .for(50)
+                                    .now()
+                                    .then(_ => {
+                                        expect('this').toBe('not hit');
+                                        done();
+                                    }, err => {
+                                        expect(i).toBe(50);
+                                        done();
+                                    });
+
+                                while(limit--) {
+                                    d = i;
+                                    jasmine.clock().tick(n);
+
+                                    d = i - d;
+
+                                    expect(d).toBe(1);
+                                }
+                            });
+                        });
+
+                        describe('and the strategy returns a "nextable"', function() {
+                            it('it repeats at intervals returned by the strategy\'s nextable', function(done) {
+                                let i = 0,
+                                    limit = 50,
+                                    n = 1,
+                                    d;
+
+                                tryto(function() { i++; throw 'fail'; })
+                                    .using(function(cfg) {
+                                        return function() { n = Math.floor(Math.random() * 1000 * cfg.v); return n; };
+                                    })
+                                    .config({ v: 2 })
+                                    .every(1)
+                                    .for(50)
+                                    .now()
+                                    .then(_ => {
+                                        expect('this').toBe('not hit');
+                                        done();
+                                    }, err => {
+                                        expect(i).toBe(50);
+                                        done();
+                                    });
+
+                                while(limit--) {
+                                    d = i;
+                                    jasmine.clock().tick(n);
+
+                                    d = i - d;
+
+                                    expect(d).toBe(1);
+                                }
+                            });
                         });
                     });
                 });

@@ -2,7 +2,6 @@
 const simple_backoff = require('simple-backoff'),
     _ = require('lodash.merge');
 
-
 exports = module.exports = function tryto(fn) {
     return new Tryto(fn);
 };
@@ -64,7 +63,7 @@ class Tryto {
         let strat = arguments[1];
 
         if(!strat) {
-            strat = this._getStrat();
+            strat = this._get_strat();
         }
 
         return new Promise((res, rej) => {
@@ -76,24 +75,25 @@ class Tryto {
                 return rej('ERR: For or every must be called before starting.');
             }
 
-            setTimeout(() => {
+            let _this = this;
+            setTimeout(function try_again() {
                 try {
-                    let result = this._fn();
+                    let result = _this._fn();
 
                     if(result instanceof Promise) {
-                        result.then(null, () => {
-                            if(--this._for) {
-                                return this.in(strat(), strat);
+                        result.then(res, () => {
+                            if(--_this._for) {
+                                setTimeout(try_again, strat());
                             } else {
                                 throw 'expired';
                             }
-                        }).then(res, rej);
+                        }).then(null, rej);
                     } else {
                         res();
                     }
                 } catch(ex) {
-                    if(--this._for) {
-                        this.in(strat(), strat).then(res, rej);
+                    if(--_this._for) {
+                        setTimeout(try_again, strat());
                     } else {
                         rej('expired');
                     }
@@ -102,7 +102,7 @@ class Tryto {
         });
     }
 
-    _getStrat() {
+    _get_strat() {
         if([
             exports.nobackoff,
             exports.linear,

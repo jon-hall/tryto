@@ -63,11 +63,12 @@ describe('tryto', function() {
                     jasmine.clock().uninstall();
                 });
 
-                // TODO: This test explodes @ >1,000,000 iterations with out of memory error - refactor 'in' to fix!
                 describe('and we don\'t supply a "for" value', function() {
                     it('it runs the task indefinitely', function(done) {
                         var i = 0,
-                            limit = process.env.STRESS_TEST ? 1000000 : 100000;
+                            // To test extreme iterations (100,000,000), set STRESS_TEST
+                            // WARNING: It'll probably take several minutes to run!
+                            limit = process.env.STRESS_TEST ? 100000000 : 100000;
 
                         tryto(function() {
                             if(i < limit) throw 'fail';

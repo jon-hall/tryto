@@ -1,6 +1,7 @@
 'use strict';
 const simple_backoff = require('simple-backoff'),
-    _ = require('lodash.merge');
+    _ = require('lodash.merge'),
+    STRATEGY_CHECKED = Symbol();
 
 exports = module.exports = function tryto(fn) {
     return new Tryto(fn);
@@ -60,10 +61,10 @@ class Tryto {
     }
 
     in(delay) {
-        let strat = arguments[1];
+        let strategy = arguments[1];
 
-        if(!strat) {
-            strat = this._get_strat();
+        if(!strategy) {
+            strategy = this.strategy;
         }
 
         return new Promise((res, rej) => {
@@ -75,38 +76,12 @@ class Tryto {
                 return rej('ERR: For or every must be called before starting.');
             }
 
-            let _this = this;
-            setTimeout(function try_again() {
-                try {
-                    let result = _this._fn();
-
-                    if(result instanceof Promise) {
-                        result.then(res, () => {
-                            if(--_this._for) {
-                                setTimeout(try_again, _this._get_delay(strat));
-                            } else {
-                                throw 'expired';
-                            }
-                        }).then(null, rej);
-                    } else {
-                        res();
-                    }
-                } catch(ex) {
-                    if(--_this._for) {
-                        try {
-                            setTimeout(try_again, _this._get_delay(strat));
-                        } catch(ex2) {
-                            rej(ex2);
-                        }
-                    } else {
-                        rej('expired');
-                    }
-                }
-            }, delay);
+            let retrier = this._get_retrier(strategy, res, rej);
+            setTimeout(retrier, delay);
         });
     }
 
-    _get_strat() {
+    get strategy() {
         if(this._using.length === 1) {
             let cfg = _({},
                 this._config, {
@@ -120,19 +95,52 @@ class Tryto {
         }
     }
 
-    _get_delay(strat) {
-        if(strat._safe) {
-            return strat();
+    _get_retrier(strategy, res, rej) {
+        let _this = this,
+            last_delay = this._every || 0;
+
+        return function try_again() {
+            try {
+                let result = _this._fn();
+
+                if(result instanceof Promise) {
+                    result.then(res, () => {
+                        if(--_this._for) {
+                            setTimeout(try_again, (last_delay = _this._get_delay(strategy, { last_delay })));
+                        } else {
+                            throw 'expired';
+                        }
+                    }).then(null, rej);
+                } else {
+                    res();
+                }
+            } catch(ex) {
+                if(--_this._for) {
+                    try {
+                        setTimeout(try_again, (last_delay = _this._get_delay(strategy, { last_delay })));
+                    } catch(ex2) {
+                        rej(ex2);
+                    }
+                } else {
+                    rej('expired');
+                }
+            }
+        };
+    }
+
+    _get_delay(strategy, context) {
+        if(strategy[STRATEGY_CHECKED]) {
+            return strategy.call(context);
         }
 
         let n;
         try {
-            n = strat();
+            n = strategy.call(context);
             if((typeof n !== 'number') || isNaN(n)) {
                 throw 'NaN';
             }
 
-            strat._safe = true;
+            strategy[STRATEGY_CHECKED] = true;
         } catch(ex) {
             throw 'Strategy must be a "nextable"';
         }

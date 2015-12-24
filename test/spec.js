@@ -290,11 +290,15 @@ describe('tryto', function() {
                                 let i = 0,
                                     limit = 50,
                                     n = 1,
-                                    d;
+                                    d,
+                                    s;
 
                                 tryto(function() { i++; throw 'fail'; })
-                                    .using(function() { n = Math.floor(Math.random() * 1000); return n; })
-                                    .every(1)
+                                    .using(function() {
+                                        n = Math.floor(Math.random() * this.last_delay) + this.last_delay;
+                                        return n;
+                                    })
+                                    .every(1000)
                                     .for(50)
                                     .now()
                                     .then(_ => {
@@ -311,7 +315,16 @@ describe('tryto', function() {
 
                                     d = i - d;
 
-                                    expect(d).toBe(1);
+                                    if((limit === 49) && (n === 1)) {
+                                        // If the first value was 1 it'll trigger now and the first retry
+                                        expect(d).toBe(2);
+                                        s = true;
+                                    } else if(!limit && s) {
+                                        // If the first value was 1 we finished one try ago
+                                        expect(d).toBe(0);
+                                    } else {
+                                        expect(d).toBe(1);
+                                    }
                                 }
                             });
                         });
@@ -325,7 +338,10 @@ describe('tryto', function() {
 
                                 tryto(function() { i++; throw 'fail'; })
                                     .using(function(cfg) {
-                                        return function() { n = Math.floor(Math.random() * 1000 * cfg.v); return n; };
+                                        return function() {
+                                            n = Math.floor(Math.random() * 1000 * cfg.v);
+                                            return n;
+                                        };
                                     })
                                     .config({ v: 2 })
                                     .every(1)

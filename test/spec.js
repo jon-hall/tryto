@@ -67,7 +67,7 @@ describe('tryto', function() {
                         let i = 0,
                             // To test extreme iterations (100,000,000), set STRESS_TEST
                             // WARNING: It'll probably take several minutes to run!
-                            limit = process.env.STRESS_TEST ? 100000000 : 100000;
+                            limit = process.env.STRESS_TEST ? 1e8 : 1e5;
 
                         tryto(function() { if(i < limit) throw 'fail'; })
                             .every(1)
@@ -339,7 +339,7 @@ describe('tryto', function() {
                                 tryto(function() { i++; throw 'fail'; })
                                     .using(function(cfg) {
                                         return function() {
-                                            n = Math.floor(Math.random() * 1000 * cfg.v);
+                                            n = Math.floor(Math.random() * 1000 * this.retries * cfg.v);
                                             return n;
                                         };
                                     })

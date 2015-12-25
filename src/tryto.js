@@ -27,7 +27,6 @@ exports.linear = nextify(simple_backoff.LinearBackoff);
 exports.exponential = nextify(simple_backoff.ExponentialBackoff);
 exports.fibonacci = nextify(simple_backoff.FibonacciBackoff);
 
-
 class Tryto {
     constructor(fn) {
         this._fn = fn;
@@ -96,17 +95,16 @@ class Tryto {
     }
 
     _get_retrier(strategy, res, rej) {
-        let _this = this,
-            last_delay = this._every || 0;
+        let last_delay = this._every || 0,
+            retries = 0,
 
-        return function try_again() {
-            try {
-                let result = _this._fn();
+            internal_retry = () => {
+                let result = this._fn();
 
                 if(result instanceof Promise) {
                     result.then(res, () => {
-                        if(--_this._for) {
-                            setTimeout(try_again, (last_delay = _this._get_delay(strategy, { last_delay })));
+                        if(--this._for) {
+                            setTimeout(try_again, (last_delay = this._get_delay(strategy, { last_delay, retries })));
                         } else {
                             throw 'expired';
                         }
@@ -114,18 +112,27 @@ class Tryto {
                 } else {
                     res();
                 }
-            } catch(ex) {
-                if(--_this._for) {
-                    try {
-                        setTimeout(try_again, (last_delay = _this._get_delay(strategy, { last_delay })));
-                    } catch(ex2) {
-                        rej(ex2);
+            },
+
+            try_again = () => {
+                retries++;
+                try {
+                    internal_retry();
+                } catch(ex) {
+                    if(--this._for) {
+                        try {
+                            // _get_delay can throw if we're mis-configured, so make sure we catch and reject
+                            setTimeout(try_again, (last_delay = this._get_delay(strategy, { last_delay, retries })));
+                        } catch(ex2) {
+                            rej(ex2);
+                        }
+                    } else {
+                        rej('expired');
                     }
-                } else {
-                    rej('expired');
                 }
-            }
-        };
+            };
+
+        return try_again;
     }
 
     _get_delay(strategy, context) {

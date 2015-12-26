@@ -110,7 +110,7 @@ class Tryto {
                         }
                     }).then(null, rej);
                 } else {
-                    res();
+                    res(result);
                 }
             },
 

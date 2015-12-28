@@ -2,10 +2,12 @@
   "name": "try-to",
   "version": "0.0.0",
   "description": "try to do stuff, get promises back, chainy api",
-  "main": "src/tryto.js",
+  "main": "src/try-to.js",
   "scripts": {
-    "test": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& node --harmony-proxies node_modules/jasmine/bin/jasmine",
-    "dev": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& nodemon --exec \"node --harmony-proxies node_modules/jasmine/bin/jasmine\""
+    "test": "npm run jasmine && npm run lint",
+    "jasmine": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& jasmine",
+    "lint": "eslint src/*.js test/*.js",
+    "dev": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& nodemon --exec \"npm test\""
   },
   "repository": {
     "type": "git",
@@ -25,10 +27,12 @@
     "url": "https://github.com/jon-hall/tryto/issues"
   },
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=4.0.0",
+    "npm": ">=3.0.0"
   },
   "homepage": "https://github.com/jon-hall/tryto#readme",
   "devDependencies": {
+    "eslint": "^1.10.3",
     "jasmine": "^2.4.1",
     "nodemon": "^1.8.1"
   },

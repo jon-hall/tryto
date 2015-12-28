@@ -4,7 +4,9 @@ const simple_backoff = require('simple-backoff'),
     STRATEGY_CHECKED = Symbol();
 
 exports = module.exports = function tryto(fn) {
+    /*eslint-disable */
     return new Tryto(fn);
+    /*eslint-enable */
 };
 
 function nextify(Ctor) {
@@ -104,7 +106,9 @@ class Tryto {
                 if(result instanceof Promise) {
                     result.then(res, () => {
                         if(--this._for) {
+                            /*eslint-disable */
                             setTimeout(try_again, (last_delay = this._get_delay(strategy, { last_delay, retries })));
+                            /*eslint-enable */
                         } else {
                             throw 'expired';
                         }

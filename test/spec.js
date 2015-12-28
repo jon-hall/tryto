@@ -1,8 +1,8 @@
 'use strict';
 
-const tryto = require('../src/tryto');
+const tryto = require('../src/try-to');
 
-describe('tryto', function() {
+describe('try-to', function() {
     describe('when we try to run a function', function() {
         describe('and we don\'t supply a function', function() {
             it('it rejects', function(done) {
@@ -10,7 +10,7 @@ describe('tryto', function() {
                     .for(1)
                     .every(100)
                     .now()
-                    .then(_ => {
+                    .then(() => {
                         expect('this not').toBe('hit');
                         done();
                     }, err => {
@@ -26,7 +26,7 @@ describe('tryto', function() {
                     it('it rejects', function(done) {
                         tryto(function(){})
                             .now()
-                            .then(_ => {
+                            .then(() => {
                                 expect('this not').toBe('hit');
                                 done();
                             }, err => {
@@ -39,10 +39,10 @@ describe('tryto', function() {
                 describe('and we do supply a "for" value', function() {
                     it('it runs the task for the specified number of ticks', function(done) {
                         let i = 0;
-                        tryto(function() { if(++i < 100) throw 'fail'; })
+                        tryto(function() { if(++i < 100) { throw 'fail'; } })
                             .for(100)
                             .now()
-                            .then(_ => {
+                            .then(() => {
                                 expect(i).toBe(100);
                                 done();
                             }, err => {
@@ -69,10 +69,10 @@ describe('tryto', function() {
                             // WARNING: It'll probably take several minutes to run!
                             limit = process.env.STRESS_TEST ? 1e8 : 1e5;
 
-                        tryto(function() { if(i < limit) throw 'fail'; })
+                        tryto(function() { if(i < limit) { throw 'fail'; } })
                             .every(1)
                             .now()
-                            .then(_ => {
+                            .then(() => {
                                 expect(i).toBe(limit + 1);
                                 done();
                             }, err => {
@@ -95,10 +95,10 @@ describe('tryto', function() {
                             .every(1)
                             .for(100)
                             .now()
-                            .then(_ => {
-                                expect('this').toBe('not hit');
+                            .then(() => {
+                                expect('this not').toBe('hit');
                                 done();
-                            }, err => {
+                            }, () => {
                                 expect(i).toBe(100);
                                 done();
                             });
@@ -118,10 +118,10 @@ describe('tryto', function() {
                                 .every(1)
                                 .for(100)
                                 .now()
-                                .then(_ => {
-                                    expect('this').toBe('not hit');
+                                .then(() => {
+                                    expect('this not').toBe('hit');
                                     done();
-                                }, err => {
+                                }, () => {
                                     expect(i).toBe(100);
                                     done();
                                 });
@@ -154,10 +154,10 @@ describe('tryto', function() {
                                 .every(1)
                                 .for(100)
                                 .now()
-                                .then(_ => {
-                                    expect('this').toBe('not hit');
+                                .then(() => {
+                                    expect('this not').toBe('hit');
                                     done();
-                                }, err => {
+                                }, () => {
                                     expect(i).toBe(100);
                                     done();
                                 });
@@ -193,10 +193,10 @@ describe('tryto', function() {
                                 .every(1)
                                 .for(20)
                                 .now()
-                                .then(_ => {
-                                    expect('this').toBe('not hit');
+                                .then(() => {
+                                    expect('this not').toBe('hit');
                                     done();
-                                }, err => {
+                                }, () => {
                                     expect(i).toBe(20);
                                     done();
                                 });
@@ -234,10 +234,10 @@ describe('tryto', function() {
                                 .every(1)
                                 .for(50)
                                 .now()
-                                .then(_ => {
-                                    expect('this').toBe('not hit');
+                                .then(() => {
+                                    expect('this not').toBe('hit');
                                     done();
-                                }, err => {
+                                }, () => {
                                     expect(i).toBe(50);
                                     done();
                                 });
@@ -267,13 +267,11 @@ describe('tryto', function() {
                     describe('and we\'re using a custom backoff strategy', function() {
                         describe('and the strategy isn\'t a "nextable" and doesn\'t return one', function() {
                             it('it rejects', function(done) {
-                                let limit = 1;
-
                                 tryto(function(){ throw 'fail'; })
                                     .using(function(){})
                                     .for(2)
                                     .now()
-                                    .then(_ => {
+                                    .then(() => {
                                         expect('this not').toBe('hit');
                                         done();
                                     }, err => {
@@ -301,10 +299,10 @@ describe('tryto', function() {
                                     .every(1000)
                                     .for(50)
                                     .now()
-                                    .then(_ => {
-                                        expect('this').toBe('not hit');
+                                    .then(() => {
+                                        expect('this not').toBe('hit');
                                         done();
-                                    }, err => {
+                                    }, () => {
                                         expect(i).toBe(50);
                                         done();
                                     });
@@ -347,10 +345,10 @@ describe('tryto', function() {
                                     .every(1)
                                     .for(50)
                                     .now()
-                                    .then(_ => {
-                                        expect('this').toBe('not hit');
+                                    .then(() => {
+                                        expect('this not').toBe('hit');
                                         done();
-                                    }, err => {
+                                    }, () => {
                                         expect(i).toBe(50);
                                         done();
                                     });

@@ -4,9 +4,10 @@ const simple_backoff = require('simple-backoff'),
     STRATEGY_CHECKED = Symbol();
 
 /**
- * default export for the library is a factory function which wraps the Tryto constructor.
- * @param  {Function} fn The function which is to be tried.
- * @return {Tryto}      A 'Tryto' instance which can be configured to run the supplied
+ * The default export for the library is a factory function which wraps the Tryto constructor.
+ * @module tryto
+ * @param  {Function} fn The function which is to be (re)tried.
+ * @return {module:tryto~Tryto}      A 'Tryto' instance which can be configured to run the supplied
  * function until it succeeds (or any configured limits are hit).
  */
 exports = module.exports = function tryto(fn) {
@@ -34,20 +35,41 @@ NoBackoff.prototype = Object.create(simple_backoff.Backoff.prototype);
 NoBackoff.prototype._step = NoBackoff.prototype._reset = function(){ this.cur = this.min; };
 
 // Setup the backoff strategy exports using 'nextify'
+/**
+ * A strategy which never increases the retry delay.
+ * @type {Function}
+ */
 exports.nobackoff = nextify(NoBackoff);
-exports.linear = nextify(simple_backoff.LinearBackoff);
-exports.exponential = nextify(simple_backoff.ExponentialBackoff);
-exports.fibonacci = nextify(simple_backoff.FibonacciBackoff);
 
 /**
- * This is the main 'tryto' class which is created with a function to try,
- * configured via a series of chainable method calls, and then started, which
- * returns a promise.
+ * A strategy which increases the retry delay linearly.
+ * @type {Function}
+ */
+exports.linear = nextify(simple_backoff.LinearBackoff);
+
+/**
+ * A strategy which increases the retry delay exponentially.
+ * @type {Function}
+ */
+exports.exponential = nextify(simple_backoff.ExponentialBackoff);
+
+/**
+ * A strategy which increases the retry delay based on the fibonacci sequence.
+ * @type {Function}
+ */
+exports.fibonacci = nextify(simple_backoff.FibonacciBackoff);
+
+ /**
+ * @class
+ * @classdesc The main 'tryto' class, which is created with a function to (re)try,
+ * it can then be configured via a series of chainable method calls, and finally
+ * started - which returns a promise.
+ * @memberof module:tryto
  */
 class Tryto {
     /**
-     * Make a new Tryto instance.
-     * @param  {Function} fn The function this Tryto will be trying to run
+     * Makes a new Tryto instance.
+     * @param  {Function} fn The function this Tryto will be trying to run.
      */
     constructor(fn) {
         this._fn = fn;
@@ -56,10 +78,10 @@ class Tryto {
     }
 
     /**
-     * Specify how many times the function should be tried
-     * @param  {Number} times The number of times to try the function this Tryto is
-     * going to run.
-     * @return {Tryto}       This instance, for chaining.
+     * Specify how many times the function should be tried before rejecting.
+     * @param  {Number} times The number of times to retry the function associated
+     * with this Tryto before giving up.
+     * @return {module:tryto~Tryto}     This instance, for chaining.
      */
     for(times) {
         this._for = times;
@@ -67,10 +89,10 @@ class Tryto {
     }
 
     /**
-     * Specify how frequently the function should be tried (initially, at least)
+     * Specify how frequently the function should be tried (initially, at least).
      * @param  {Number} delay The initial delay (in milliseconds) at which to retry
-     * the function.
-     * @return {Tryto}       This instance, for chaining.
+     * the function, should it fail.
+     * @return {module:tryto~Tryto}       This instance, for chaining.
      */
     every(delay) {
         this._every = delay;
@@ -80,10 +102,10 @@ class Tryto {
     // TODO: Nextable -> Symbol.iterator?
     /**
      * Choose the strategy which will be used for calculating the next delay (backoff).
-     * @param  {Function} strategy Either a 'nextable', a function which can be repeatedly
-     * called to get the next delay, or a 'nextable' factory which can be called with a
-     * config object and returns a 'nextable'.
-     * @return {Tryto}       This instance, for chaining.
+     * @param  {Function} strategy Either a 'nextable' - a function which can be repeatedly
+     * called to get the next delay - or a 'nextable' factory, which can be called with a
+     * config object and returns a 'nextable' as a result.
+     * @return {module:tryto~Tryto}       This instance, for chaining.
      */
     using(strategy) {
         this._using = strategy;
@@ -91,10 +113,10 @@ class Tryto {
     }
 
     /**
-     * Used to configure the strategy which is active when the retries are started.
+     * Set any configuration for the strategy which is active when the retries are started.
      * @param  {Object} config A configuration object which will be passed to the
      * 'nextable' factory function of the active strategy when 'in' or 'now' is called.
-     * @return {Tryto}       This instance, for chaining.
+     * @return {module:tryto~Tryto}       This instance, for chaining.
      */
     config(config) {
         this._config = config;
@@ -102,10 +124,10 @@ class Tryto {
     }
 
     /**
-     * Starts attempting to run the function immediately (well, on the next tick...).
+     * Start attempting to run the function immediately (well, on the next tick...).
      * @return {Promise}       A promise which resolves with the result of the function,
      * if it succeeds, or rejects should the function fail to execute successfully before
-     * the configured limits.
+     * the configured limits are hit.
      */
     now() {
         // start
@@ -113,12 +135,12 @@ class Tryto {
     }
 
     /**
-     * Starts attempting to run the function after the scheduled amount of time.
+     * Start attempting to run the function after the scheduled amount of time.
      * @param  {Number} delay   The delay (in milliseconds) after which to start trying
      * the function.
      * @return {Promise}        A promise which resolves with the result of the function,
      * if it succeeds, or rejects should the function fail to execute successfully before
-     * the configured limits.
+     * the configured limits are reached.
      */
     in(delay) {
         // Snapshot a 'nextable' from our current strategy and config

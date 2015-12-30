@@ -7,6 +7,7 @@ npm install try-to --save
 ```
 
 ### Usage
+A simple example, illustrating all of the main API features.
 ```js
 'use strict';
 const tryto = require('try-to');
@@ -25,3 +26,6 @@ tryto(function() {
         // Function didn't successfully run
     });
 ```
+
+### API Docs
+For complete API docs see [API.md](API.md).

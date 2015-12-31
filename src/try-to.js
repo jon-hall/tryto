@@ -161,7 +161,9 @@ class Tryto {
     }
 
     get _strategy() {
-        if(this._using.length === 1) {
+        if((typeof this._using === 'function') && (this._using.length === 1)) {
+            // If our strategy is a function with length then it should be a 'nextable factory',
+            // so invoke it (with any config setup) and get back what should be a 'nextable'
             let cfg = _({},
                 this._config, {
                     min: this._every || 0,
@@ -178,11 +180,14 @@ class Tryto {
         let last_delay = this._every || 0,
             retries = 0,
 
+            // This method handles invocation results and determining if a retry is to be
+            // scheduled (done via setTimeout to unwind the call-stack and stop memory leaking)
             internal_retry = () => {
                 let result = this._fn();
 
                 if(result instanceof Promise) {
                     result.then(res, () => {
+                        // TODO: How easily can allowing multiple parallel 'now'/'in' calls be done?
                         if(--this._for) {
                             /*eslint-disable */
                             setTimeout(try_again, (last_delay = this._get_delay({
@@ -198,6 +203,7 @@ class Tryto {
                 }
             },
 
+            // This method handles the actual retry execution
             try_again = () => {
                 retries++;
                 try {
@@ -222,10 +228,12 @@ class Tryto {
         return try_again;
     }
 
+    // Gets the next delay to retry at, also makes sure the current strategy is valid
+    // and caches this information, if it is valid, so we avoid re-checking later
     _get_delay(context) {
         let nextable = this._nextable;
 
-        if(nextable[STRATEGY_CHECKED]) {
+        if(nextable && nextable[STRATEGY_CHECKED]) {
             return nextable.call(context);
         }
 
@@ -238,7 +246,7 @@ class Tryto {
 
             nextable[STRATEGY_CHECKED] = true;
         } catch(ex) {
-            throw 'Strategy must be a "nextable"';
+            throw 'Strategy must be a "nextable" or "nextable factory"';
         }
 
         return n;

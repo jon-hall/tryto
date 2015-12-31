@@ -265,6 +265,42 @@ describe('try-to', function() {
                     });
 
                     describe('and we\'re using a custom backoff strategy', function() {
+                        describe('and the strategy is null', function() {
+                            it('it rejects', function(done) {
+                                tryto(function(){ throw 'fail'; })
+                                    .using(null)
+                                    .for(2)
+                                    .now()
+                                    .then(() => {
+                                        expect('this not').toBe('hit');
+                                        done();
+                                    }, err => {
+                                        expect(err).toMatch(/nextable/i);
+                                        done();
+                                    });
+
+                                jasmine.clock().tick(1);
+                            });
+                        });
+
+                        describe('and the strategy isn\'t a function', function() {
+                            it('it rejects', function(done) {
+                                tryto(function(){ throw 'fail'; })
+                                    .using([])
+                                    .for(2)
+                                    .now()
+                                    .then(() => {
+                                        expect('this not').toBe('hit');
+                                        done();
+                                    }, err => {
+                                        expect(err).toMatch(/nextable/i);
+                                        done();
+                                    });
+
+                                jasmine.clock().tick(1);
+                            });
+                        });
+
                         describe('and the strategy isn\'t a "nextable" and doesn\'t return one', function() {
                             it('it rejects', function(done) {
                                 tryto(function(){ throw 'fail'; })

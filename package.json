@@ -1,6 +1,6 @@
 {
   "name": "try-to",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "try to do stuff, get promises back, chainy api",
   "main": "src/try-to.js",
   "scripts": {

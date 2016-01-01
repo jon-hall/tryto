@@ -50,6 +50,22 @@ describe('try-to', function() {
                                 done();
                             });
                     });
+
+                    describe('and the task never succeeds', function() {
+                        it('then it rejects with the last error', function(done) {
+                            let i = 0;
+                            tryto(function() { throw i++; })
+                                .for(100)
+                                .now()
+                                .then(() => {
+                                    expect('this not').toBe('hit');
+                                    done();
+                                }, err => {
+                                    expect(err).toEqual(i - 1);
+                                    done();
+                                });
+                        });
+                    });
                 });
             });
 

@@ -186,8 +186,10 @@ class Tryto {
                 let result = this._fn();
 
                 if(result instanceof Promise) {
-                    result.then(res, () => {
+                    result.then(res, err => {
                         // TODO: How easily can allowing multiple parallel 'now'/'in' calls be done?
+                        // Might just be better to store our currently active promise and return it from
+                        // any calls to 'now'/'in' when we're still running...
                         if(--this._for) {
                             /*eslint-disable */
                             setTimeout(try_again, (last_delay = this._get_delay({
@@ -195,7 +197,8 @@ class Tryto {
                             })));
                             /*eslint-enable */
                         } else {
-                            throw 'expired';
+                            // We failed too many times - forward the error by returning a rejection
+                            return Promise.reject(err);
                         }
                     }).then(null, rej);
                 } else {
@@ -220,7 +223,7 @@ class Tryto {
                             rej(ex2);
                         }
                     } else {
-                        rej('expired');
+                        rej(ex);
                     }
                 }
             };

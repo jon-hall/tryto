@@ -51,6 +51,39 @@ describe('try-to', function() {
                             });
                     });
 
+                    describe('and the task returns a Promise', function() {
+                        describe('and the Promise is rejected', function() {
+                            it('it runs the task again', function(done) {
+                                let i = 0;
+                                tryto(function() { if(!i++) { return Promise.reject(); } })
+                                    .for(100)
+                                    .now()
+                                    .then(() => {
+                                        expect(i).toBe(2);
+                                        done();
+                                    }, err => {
+                                        expect(err).toBe('no error');
+                                        done();
+                                    });
+                            });
+                        });
+
+                        describe('and the Promise is resolved', function() {
+                            it('it resolves the Promise returned from "now" with the result', function(done) {
+                                tryto(function() { return Promise.resolve('abc'); })
+                                    .for(100)
+                                    .now()
+                                    .then(res => {
+                                        expect(res).toBe('abc');
+                                        done();
+                                    }, err => {
+                                        expect(err).toBe('no error');
+                                        done();
+                                    });
+                            });
+                        });
+                    });
+
                     describe('and the task never succeeds', function() {
                         it('then it rejects with the last error', function(done) {
                             let i = 0;

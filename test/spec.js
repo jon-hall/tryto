@@ -37,18 +37,37 @@ describe('try-to', function() {
                 });
 
                 describe('and we do supply a "for" value', function() {
-                    it('it runs the task for the specified number of ticks', function(done) {
-                        let i = 0;
-                        tryto(function() { if(++i < 100) { throw 'fail'; } })
-                            .for(100)
-                            .now()
-                            .then(() => {
-                                expect(i).toBe(100);
-                                done();
-                            }, err => {
-                                expect(err).toBe('no error');
-                                done();
-                            });
+                    describe('and the task doesn\'t throw an exception (or return a rejected Promise)', function() {
+                        it('it runs the task once and resolves with the return value', function(done) {
+                            let i = 0;
+                            tryto(function() { i++; return 'abc'; })
+                                .for(100)
+                                .now()
+                                .then(res => {
+                                    expect(i).toBe(1);
+                                    expect(res).toBe('abc');
+                                    done();
+                                }, err => {
+                                    expect(err).toBe('no error');
+                                    done();
+                                });
+                        });
+                    });
+
+                    describe('and the task always throws an exception when ran', function() {
+                        it('it runs the task for the specified number of ticks, then rejects', function(done) {
+                            let i = 0;
+                            tryto(function() { i++; throw 'fail'; })
+                                .for(100)
+                                .now()
+                                .then(() => {
+                                    expect('this not').toBe('hit');
+                                    done();
+                                }, () => {
+                                    expect(i).toBe(100);
+                                    done();
+                                });
+                        });
                     });
 
                     describe('and the task returns a Promise', function() {

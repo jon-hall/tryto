@@ -1,6 +1,6 @@
 # try-to
 
-Try to do a task, try again if it fails, backing-off with a customisable algorithm, and returning a promise (built on top of the excellent [simple-backoff](https://github.com/myndzi/simple-backoff).
+Try to do a task, try again if it fails, backing-off with a customisable algorithm, and returning a promise (built on top of the excellent [simple-backoff](https://github.com/myndzi/simple-backoff)).
 
 ```sh
 npm install try-to --save

@@ -27,19 +27,12 @@ function nextify(Ctor) {
     };
 }
 
-// 'simple-backoff' doesn't include an operational linear backoff, so we implement one
-function NoBackoff(cfg) {
-    simple_backoff.Backoff.call(this, cfg);
-}
-NoBackoff.prototype = Object.create(simple_backoff.Backoff.prototype);
-NoBackoff.prototype._step = NoBackoff.prototype._reset = function(){ this.cur = this.min; };
-
 // Setup the backoff strategy exports using 'nextify'
 /**
  * A strategy which never increases the retry delay.
  * @type {Function}
  */
-exports.nobackoff = nextify(NoBackoff);
+exports.nobackoff = cfg => () => cfg.step;
 
 /**
  * A strategy which increases the retry delay linearly.
